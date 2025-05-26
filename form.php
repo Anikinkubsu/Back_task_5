@@ -9,7 +9,7 @@ $login = $_SESSION['login'] ?? null;
 // Определяем действие формы
 $is_edit_mode = isset($_GET['edit']) && !empty($login);
 $form_action = $is_edit_mode ? 'edit.php' : 'index.php';
-session_start();
+
 header('Content-Type: text/html; charset=UTF-8');
 
 // Проверяем режим редактирования
