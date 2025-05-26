@@ -1,20 +1,15 @@
 <?php
-// Проверяем, не запущена ли уже сессия
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
-// Устанавливаем заголовки
 header('Content-Type: text/html; charset=UTF-8');
 
-// Инициализация переменных из сессии
 $values = $_SESSION['form_data'] ?? [];
 $errors = $_SESSION['errors'] ?? [];
 $generated_credentials = $_SESSION['generated_credentials'] ?? null;
 $login = $_SESSION['login'] ?? null;
 
-// Подключение к базе данных
-$languages = [];
+// Определяем действие формы
+$is_edit_mode = isset($_GET['edit']) && !empty($login);
+$form_action = $is_edit_mode ? 'edit.php' : 'index.php';
+
 try {
     $db_host = 'localhost';
     $db_name = 'u68908';
@@ -22,27 +17,18 @@ try {
     $db_pass = '9704645';
     
     $pdo = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8", $db_user, $db_pass);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    
     $stmt = $pdo->query("SELECT * FROM programming_languages");
-    if ($stmt !== false) {
-        $languages = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
+    $languages = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
-    error_log("Database error: " . $e->getMessage());
     $languages = [];
 }
-
-// Определение режима работы
-$is_edit_mode = isset($_GET['edit']) && !empty($login);
-$form_action = $is_edit_mode ? 'edit.php' : 'index.php';
 ?>
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Анкета</title>
+    <title><?= $is_edit_mode ? 'Редактирование профиля' : 'Анкета' ?></title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -57,23 +43,22 @@ $form_action = $is_edit_mode ? 'edit.php' : 'index.php';
             padding: 10px;
             margin-bottom: 20px;
             border-radius: 4px;
+            border: 1px solid #d6e9c6;
         }
         .user-panel {
+            background: #f8f9fa;
+            padding: 15px;
             margin-bottom: 20px;
-            padding: 10px;
-            background: #f5f5f5;
             border-radius: 5px;
+            border: 1px solid #ddd;
         }
         .user-actions a {
-            margin-right: 10px;
-            color: #0066cc;
+            margin-right: 15px;
+            color: #007bff;
             text-decoration: none;
         }
         .user-actions a:hover {
             text-decoration: underline;
-        }
-        .login-link {
-            margin-bottom: 20px;
         }
         .form-group {
             margin-bottom: 20px;
@@ -82,6 +67,26 @@ $form_action = $is_edit_mode ? 'edit.php' : 'index.php';
             display: block;
             margin-bottom: 8px;
             font-weight: bold;
+        }
+        .input-group {
+            margin-top: 5px;
+        }
+        .input-option {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .input-option input[type="radio"],
+        .input-option input[type="checkbox"] {
+            width: auto;
+            margin: 0 10px 0 0;
+            transform: scale(1.2);
+        }
+        .option-label {
+            font-weight: normal;
+            cursor: pointer;
+            user-select: none;
+            margin-bottom: 0;
         }
         input, select, textarea {
             width: 100%;
@@ -94,49 +99,47 @@ $form_action = $is_edit_mode ? 'edit.php' : 'index.php';
             height: 120px;
         }
         .error {
-            border-color: red !important;
+            border-color: #dc3545;
         }
         .error-message {
-            color: red;
+            color: #dc3545;
             font-size: 0.8em;
             margin-top: 5px;
+        }
+        button {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #218838;
         }
         .credentials {
             background: #f0f8ff;
             padding: 15px;
             margin-bottom: 20px;
             border-radius: 5px;
-        }
-        .input-option {
-            display: flex;
-            align-items: center;
-            margin-bottom: 8px;
-        }
-        .input-option input[type="radio"],
-        .input-option input[type="checkbox"] {
-            width: auto;
-            margin-right: 10px;
-        }
-        button {
-            background-color: #4CAF50;
-            color: white;
-            padding: 10px 15px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        button:hover {
-            background-color: #45a049;
+            border: 1px solid #d1e7ff;
         }
     </style>
 </head>
 <body>
+    <?php if (isset($_SESSION['message'])): ?>
+        <div class="message"><?= htmlspecialchars($_SESSION['message']) ?></div>
+        <?php unset($_SESSION['message']); ?>
+    <?php endif; ?>
+
     <?php if (!empty($login)): ?>
         <div class="user-panel">
             <p>Вы вошли как: <?= htmlspecialchars($login) ?></p>
             <div class="user-actions">
-                <a href="?edit=1">Редактировать профиль</a>
+                <?php if (!$is_edit_mode): ?>
+                    <a href="?edit=1">Редактировать профиль</a> | 
+                <?php endif; ?>
                 <a href="login.php?action=logout">Выйти</a>
             </div>
         </div>
@@ -154,12 +157,6 @@ $form_action = $is_edit_mode ? 'edit.php' : 'index.php';
         </div>
     <?php endif; ?>
 
-    <?php if (!empty($_SESSION['message'])): ?>
-        <div class="message">
-            <?= htmlspecialchars($_SESSION['message']) ?>
-        </div>
-    <?php endif; ?>
-
     <form method="POST" action="<?= htmlspecialchars($form_action) ?>">
         <div class="form-group">
             <label for="full_name" class="input-label">ФИО*</label>
@@ -167,7 +164,7 @@ $form_action = $is_edit_mode ? 'edit.php' : 'index.php';
                    value="<?= htmlspecialchars($values['full_name'] ?? '') ?>"
                    class="<?= !empty($errors['full_name']) ? 'error' : '' ?>" required>
             <?php if (!empty($errors['full_name'])): ?>
-                <div class="error-message"><?= htmlspecialchars($errors['full_name']) ?></div>
+                <div class="error-message">Введите корректное ФИО</div>
             <?php endif; ?>
         </div>
 
@@ -177,7 +174,7 @@ $form_action = $is_edit_mode ? 'edit.php' : 'index.php';
                    value="<?= htmlspecialchars($values['phone'] ?? '') ?>"
                    class="<?= !empty($errors['phone']) ? 'error' : '' ?>" required>
             <?php if (!empty($errors['phone'])): ?>
-                <div class="error-message"><?= htmlspecialchars($errors['phone']) ?></div>
+                <div class="error-message">Введите корректный телефон</div>
             <?php endif; ?>
         </div>
 
@@ -187,7 +184,7 @@ $form_action = $is_edit_mode ? 'edit.php' : 'index.php';
                    value="<?= htmlspecialchars($values['email'] ?? '') ?>"
                    class="<?= !empty($errors['email']) ? 'error' : '' ?>" required>
             <?php if (!empty($errors['email'])): ?>
-                <div class="error-message"><?= htmlspecialchars($errors['email']) ?></div>
+                <div class="error-message">Введите корректный email</div>
             <?php endif; ?>
         </div>
 
@@ -197,24 +194,26 @@ $form_action = $is_edit_mode ? 'edit.php' : 'index.php';
                    value="<?= htmlspecialchars($values['birth_date'] ?? '') ?>"
                    class="<?= !empty($errors['birth_date']) ? 'error' : '' ?>" required>
             <?php if (!empty($errors['birth_date'])): ?>
-                <div class="error-message"><?= htmlspecialchars($errors['birth_date']) ?></div>
+                <div class="error-message">Введите корректную дату</div>
             <?php endif; ?>
         </div>
 
         <div class="form-group">
             <label class="input-label">Пол*</label>
-            <div class="input-option">
-                <input type="radio" id="gender_male" name="gender" value="male"
-                    <?= ($values['gender'] ?? '') === 'male' ? 'checked' : '' ?> required>
-                <label for="gender_male" class="option-label">Мужской</label>
-            </div>
-            <div class="input-option">
-                <input type="radio" id="gender_female" name="gender" value="female"
-                    <?= ($values['gender'] ?? '') === 'female' ? 'checked' : '' ?>>
-                <label for="gender_female" class="option-label">Женский</label>
+            <div class="input-group">
+                <div class="input-option">
+                    <input type="radio" id="gender_male" name="gender" value="male"
+                        <?= ($values['gender'] ?? '') === 'male' ? 'checked' : '' ?> required>
+                    <label for="gender_male" class="option-label">Мужской</label>
+                </div>
+                <div class="input-option">
+                    <input type="radio" id="gender_female" name="gender" value="female"
+                        <?= ($values['gender'] ?? '') === 'female' ? 'checked' : '' ?>>
+                    <label for="gender_female" class="option-label">Женский</label>
+                </div>
             </div>
             <?php if (!empty($errors['gender'])): ?>
-                <div class="error-message"><?= htmlspecialchars($errors['gender']) ?></div>
+                <div class="error-message">Выберите пол</div>
             <?php endif; ?>
         </div>
 
@@ -223,14 +222,14 @@ $form_action = $is_edit_mode ? 'edit.php' : 'index.php';
             <select id="languages" name="languages[]" multiple 
                     class="<?= !empty($errors['languages']) ? 'error' : '' ?>" required>
                 <?php foreach ($languages as $lang): ?>
-                    <option value="<?= htmlspecialchars($lang['id']) ?>"
+                    <option value="<?= $lang['id'] ?>"
                         <?= in_array($lang['id'], $values['languages'] ?? []) ? 'selected' : '' ?>>
                         <?= htmlspecialchars($lang['name']) ?>
                     </option>
                 <?php endforeach; ?>
             </select>
             <?php if (!empty($errors['languages'])): ?>
-                <div class="error-message"><?= htmlspecialchars($errors['languages']) ?></div>
+                <div class="error-message">Выберите хотя бы один язык</div>
             <?php endif; ?>
         </div>
 
@@ -240,21 +239,22 @@ $form_action = $is_edit_mode ? 'edit.php' : 'index.php';
         </div>
 
         <div class="form-group">
-            <div class="input-option">
-                <input type="checkbox" id="contract_agreed" name="contract_agreed"
-                    <?= ($values['contract_agreed'] ?? false) ? 'checked' : '' ?> required>
-                <label for="contract_agreed" class="option-label">С контрактом ознакомлен*</label>
+            <div class="input-group">
+                <div class="input-option">
+                    <input type="checkbox" id="contract_agreed" name="contract_agreed"
+                        <?= ($values['contract_agreed'] ?? false) ? 'checked' : '' ?> required>
+                    <label for="contract_agreed" class="option-label">С контрактом ознакомлен*</label>
+                </div>
             </div>
             <?php if (!empty($errors['contract_agreed'])): ?>
-                <div class="error-message"><?= htmlspecialchars($errors['contract_agreed']) ?></div>
+                <div class="error-message">Необходимо согласие</div>
             <?php endif; ?>
         </div>
 
-        <button type="submit"><?= $is_edit_mode ? 'Обновить' : 'Отправить' ?></button>
+        <button type="submit"><?= $is_edit_mode ? 'Обновить данные' : 'Отправить' ?></button>
     </form>
 </body>
 </html>
 <?php
-// Очистка временных данных сессии
-unset($_SESSION['errors'], $_SESSION['generated_credentials'], $_SESSION['message']);
+unset($_SESSION['errors'], $_SESSION['generated_credentials']);
 ?>
