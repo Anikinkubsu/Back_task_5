@@ -9,7 +9,68 @@ $login = $_SESSION['login'] ?? null;
 // Определяем действие формы
 $is_edit_mode = isset($_GET['edit']) && !empty($login);
 $form_action = $is_edit_mode ? 'edit.php' : 'index.php';
+session_start();
+header('Content-Type: text/html; charset=UTF-8');
 
+// Проверяем режим редактирования
+$is_edit_mode = isset($_GET['edit']) && !empty($_SESSION['login']);
+
+// Если режим редактирования, загружаем данные пользователя
+if ($is_edit_mode && empty($_SESSION['form_data'])) {
+    try {
+        $db_host = 'localhost';
+        $db_name = 'u68908';
+        $db_user = 'u68908';
+        $db_pass = '9704645';
+        
+        $pdo = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8", $db_user, $db_pass);
+        
+        // Получаем данные пользователя
+        $stmt = $pdo->prepare("SELECT a.* FROM applications a JOIN users u ON a.id = u.application_id WHERE u.login = ?");
+        $stmt->execute([$_SESSION['login']]);
+        $user_data = $stmt->fetch();
+        
+        if ($user_data) {
+            // Получаем выбранные языки программирования
+            $stmt = $pdo->prepare("SELECT language_id FROM application_languages WHERE application_id = ?");
+            $stmt->execute([$user_data['id']]);
+            $languages = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            
+            // Заполняем данные для формы
+            $_SESSION['form_data'] = [
+                'full_name' => $user_data['full_name'],
+                'phone' => $user_data['phone'],
+                'email' => $user_data['email'],
+                'birth_date' => $user_data['birth_date'],
+                'gender' => $user_data['gender'],
+                'biography' => $user_data['biography'],
+                'contract_agreed' => $user_data['contract_agreed'],
+                'languages' => $languages
+            ];
+        }
+    } catch (PDOException $e) {
+        die("Ошибка базы данных: " . $e->getMessage());
+    }
+}
+
+$values = $_SESSION['form_data'] ?? [];
+$errors = $_SESSION['errors'] ?? [];
+$generated_credentials = $_SESSION['generated_credentials'] ?? null;
+$login = $_SESSION['login'] ?? null;
+
+// Получаем список всех языков программирования
+try {
+    $db_host = 'localhost';
+    $db_name = 'u68908';
+    $db_user = 'u68908';
+    $db_pass = '9704645';
+    
+    $pdo = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8", $db_user, $db_pass);
+    $stmt = $pdo->query("SELECT * FROM programming_languages");
+    $all_languages = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $all_languages = [];
+}
 try {
     $db_host = 'localhost';
     $db_name = 'u68908';
