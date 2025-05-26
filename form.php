@@ -155,12 +155,7 @@ $form_action = $is_edit_mode ? 'edit.php' : 'index.php';
     <div class="login-link">
         <a href="login.php">Войти</a>
     </div>
-<?php endif; ?>
-    <?php if (!empty($login)): ?>
-        <p>Вы вошли как: <?= htmlspecialchars($login) ?> (<a href="login.php?action=logout">Выйти</a>)</p>
-    <?php else: ?>
-        <p><a href="login.php">Войти</a></p>
-    <?php endif; ?>
+
 
     <?php if (!empty($generated_credentials)): ?>
         <div class="credentials">
