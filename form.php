@@ -37,6 +37,13 @@ $form_action = $is_edit_mode ? 'edit.php' : 'index.php';
             padding: 20px;
             line-height: 1.6;
         }
+.message {
+    background: #dff0d8;
+    color: #3c763d;
+    padding: 10px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+}
         .form-group {
             margin-bottom: 15px;
         }
