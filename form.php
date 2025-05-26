@@ -44,6 +44,39 @@ $form_action = $is_edit_mode ? 'edit.php' : 'index.php';
     margin-bottom: 20px;
     border-radius: 4px;
 }
+.user-panel {
+    margin-bottom: 20px;
+    padding: 10px;
+    background: #f5f5f5;
+    border-radius: 5px;
+}
+
+.user-actions {
+    margin-top: 5px;
+}
+
+.user-actions a {
+    margin-right: 10px;
+    color: #0066cc;
+    text-decoration: none;
+}
+
+.user-actions a:hover {
+    text-decoration: underline;
+}
+
+.login-link {
+    margin-bottom: 20px;
+}
+
+.login-link a {
+    color: #0066cc;
+    text-decoration: none;
+}
+
+.login-link a:hover {
+    text-decoration: underline;
+}
         .form-group {
             margin-bottom: 15px;
         }
