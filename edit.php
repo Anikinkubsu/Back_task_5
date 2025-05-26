@@ -1,14 +1,5 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
-header('Content-Type: text/html; charset=UTF-8');
-
-$db_host = 'localhost';
-$db_name = 'u68908';
-$db_user = 'u68908';
-$db_pass = '9704645';
+session_start();
 
 // Проверка авторизации
 if (empty($_SESSION['login'])) {
@@ -16,113 +7,89 @@ if (empty($_SESSION['login'])) {
     exit();
 }
 
-$errors = [];
-$values = [];
+// Подключение к БД
+$db_host = 'localhost';
+$db_name = 'u68908';
+$db_user = 'u68908';
+$db_pass = '9704645';
 
 try {
     $pdo = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8", $db_user, $db_pass);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
+    
     // Получаем данные пользователя
-    $stmt = $pdo->prepare("SELECT u.*, a.* FROM users u JOIN applications a ON u.application_id = a.id WHERE u.login = ?");
+    $stmt = $pdo->prepare("SELECT a.* FROM applications a JOIN users u ON a.id = u.application_id WHERE u.login = ?");
     $stmt->execute([$_SESSION['login']]);
     $user_data = $stmt->fetch();
 
-    if (!$user_data) {
-        die("Пользователь не найден");
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        // Обработка формы редактирования
+        $values = [
+            'full_name' => $_POST['full_name'],
+            'phone' => $_POST['phone'],
+            'email' => $_POST['email'],
+            'birth_date' => $_POST['birth_date'],
+            'gender' => $_POST['gender'],
+            'biography' => $_POST['biography'],
+            'contract_agreed' => isset($_POST['contract_agreed']) ? 1 : 0
+        ];
+
+        // Обновляем данные
+        $stmt = $pdo->prepare("UPDATE applications SET 
+            full_name = ?, phone = ?, email = ?, birth_date = ?, 
+            gender = ?, biography = ?, contract_agreed = ? 
+            WHERE id = ?");
+        $stmt->execute([
+            $values['full_name'],
+            $values['phone'],
+            $values['email'],
+            $values['birth_date'],
+            $values['gender'],
+            $values['biography'],
+            $values['contract_agreed'],
+            $user_data['id']
+        ]);
+
+        // Обновляем языки программирования
+        $pdo->prepare("DELETE FROM application_languages WHERE application_id = ?")
+            ->execute([$user_data['id']]);
+
+        if (!empty($_POST['languages'])) {
+            $stmt = $pdo->prepare("INSERT INTO application_languages (application_id, language_id) VALUES (?, ?)");
+            foreach ($_POST['languages'] as $lang_id) {
+                $stmt->execute([$user_data['id'], $lang_id]);
+            }
+        }
+
+        $_SESSION['message'] = "Данные успешно обновлены!";
+        header('Location: index.php');
+        exit();
     }
 
-    // Заполняем значения для формы
-    $values = [
+    // Получаем выбранные языки
+    $stmt = $pdo->prepare("SELECT language_id FROM application_languages WHERE application_id = ?");
+    $stmt->execute([$user_data['id']]);
+    $selected_langs = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+    // Получаем все языки
+    $languages = $pdo->query("SELECT * FROM programming_languages")->fetchAll();
+
+    // Подготавливаем данные для формы
+    $_SESSION['form_data'] = [
         'full_name' => $user_data['full_name'],
         'phone' => $user_data['phone'],
         'email' => $user_data['email'],
         'birth_date' => $user_data['birth_date'],
         'gender' => $user_data['gender'],
         'biography' => $user_data['biography'],
-        'contract_agreed' => (bool)$user_data['contract_agreed'],
-        'languages' => []
+        'contract_agreed' => $user_data['contract_agreed'],
+        'languages' => $selected_langs
     ];
-
-    // Получаем выбранные языки программирования
-    $stmt = $pdo->prepare("SELECT language_id FROM application_languages WHERE application_id = ?");
-    $stmt->execute([$user_data['id']]);
-    $languages = $stmt->fetchAll(PDO::FETCH_COLUMN);
-    $values['languages'] = $languages;
-
-    // Получаем список всех языков для select
-    $stmt = $pdo->query("SELECT * FROM programming_languages");
-    $all_languages = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $_SESSION['languages'] = $languages;
 
 } catch (PDOException $e) {
     die("Ошибка базы данных: " . $e->getMessage());
 }
 
-// Обработка POST-запроса (обновление данных)
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $values = $_POST;
-    $values['languages'] = $_POST['languages'] ?? [];
-    $values['contract_agreed'] = isset($_POST['contract_agreed']);
-
-    // Валидация (такая же как в index.php)
-    $validation_failed = false;
-
-    if (empty($values['full_name']) || !preg_match('/^[а-яА-ЯёЁa-zA-Z\s\-]{2,150}$/u', $values['full_name'])) {
-        $errors['full_name'] = true;
-        $validation_failed = true;
-    }
-
-    // ... (остальные проверки валидации как в index.php) ...
-
-    if (!$validation_failed) {
-        try {
-            // Обновляем основную информацию
-            $stmt = $pdo->prepare("UPDATE applications SET 
-                full_name = ?, phone = ?, email = ?, birth_date = ?, 
-                gender = ?, biography = ?, contract_agreed = ?
-                WHERE id = ?");
-            
-            $stmt->execute([
-                $values['full_name'],
-                $values['phone'],
-                $values['email'],
-                $values['birth_date'],
-                $values['gender'],
-                $values['biography'],
-                $values['contract_agreed'] ? 1 : 0,
-                $user_data['id']
-            ]);
-
-            // Удаляем старые языки
-            $stmt = $pdo->prepare("DELETE FROM application_languages WHERE application_id = ?");
-            $stmt->execute([$user_data['id']]);
-
-            // Добавляем новые языки
-            $stmt = $pdo->prepare("INSERT INTO application_languages (application_id, language_id) VALUES (?, ?)");
-            foreach ($values['languages'] as $lang_id) {
-                $stmt->execute([$user_data['id'], $lang_id]);
-            }
-
-            $_SESSION['form_data'] = $values;
-            $_SESSION['message'] = "Данные успешно обновлены!";
-            header('Location: index.php');
-            exit();
-
-        } catch (PDOException $e) {
-            die("Ошибка базы данных: " . $e->getMessage());
-        }
-    } else {
-        $_SESSION['errors'] = $errors;
-        $_SESSION['form_data'] = $values;
-        header('Location: edit.php');
-        exit();
-    }
-}
-
-// Передаем данные в форму
-$_SESSION['form_data'] = $values;
-$_SESSION['languages'] = $all_languages;
-$_SESSION['is_edit_mode'] = true;
-
+// Подключаем форму
 include('form.php');
 ?>
