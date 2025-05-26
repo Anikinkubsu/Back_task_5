@@ -20,6 +20,8 @@ try {
 } catch (PDOException $e) {
     $languages = [];
 }
+    $is_edit_mode = isset($_GET['edit']) && !empty($login);
+$form_action = $is_edit_mode ? 'edit.php' : 'index.php';
 ?>
 <!DOCTYPE html>
 <html lang="ru">
@@ -101,6 +103,13 @@ try {
     </style>
 </head>
 <body>
+    <?php if (!empty($login)): ?>
+        <p>Вы вошли как: <?= htmlspecialchars($login) ?> 
+        (<a href="login.php?action=logout">Выйти</a> | 
+        <a href="?edit=1">Редактировать профиль</a>)</p>
+    <?php else: ?>
+        <p><a href="login.php">Войти</a></p>
+    <?php endif; ?>
     <?php if (!empty($login)): ?>
         <p>Вы вошли как: <?= htmlspecialchars($login) ?> (<a href="login.php?action=logout">Выйти</a>)</p>
     <?php else: ?>
