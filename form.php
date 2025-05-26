@@ -1,6 +1,10 @@
 <?php
-// Старт сессии и настройка кодировки
-session_start();
+// Проверяем, не запущена ли уже сессия
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// Устанавливаем заголовки
 header('Content-Type: text/html; charset=UTF-8');
 
 // Инициализация переменных из сессии
@@ -27,11 +31,9 @@ try {
 } catch (PDOException $e) {
     error_log("Database error: " . $e->getMessage());
     $languages = [];
-} finally {
-    $pdo = null; // Закрываем соединение
 }
 
-// Определение режима работы (редактирование или создание)
+// Определение режима работы
 $is_edit_mode = isset($_GET['edit']) && !empty($login);
 $form_action = $is_edit_mode ? 'edit.php' : 'index.php';
 ?>
@@ -62,9 +64,6 @@ $form_action = $is_edit_mode ? 'edit.php' : 'index.php';
             background: #f5f5f5;
             border-radius: 5px;
         }
-        .user-actions {
-            margin-top: 5px;
-        }
         .user-actions a {
             margin-right: 10px;
             color: #0066cc;
@@ -75,13 +74,6 @@ $form_action = $is_edit_mode ? 'edit.php' : 'index.php';
         }
         .login-link {
             margin-bottom: 20px;
-        }
-        .login-link a {
-            color: #0066cc;
-            text-decoration: none;
-        }
-        .login-link a:hover {
-            text-decoration: underline;
         }
         .form-group {
             margin-bottom: 20px;
@@ -115,9 +107,6 @@ $form_action = $is_edit_mode ? 'edit.php' : 'index.php';
             margin-bottom: 20px;
             border-radius: 5px;
         }
-        .input-group {
-            margin-top: 5px;
-        }
         .input-option {
             display: flex;
             align-items: center;
@@ -126,14 +115,7 @@ $form_action = $is_edit_mode ? 'edit.php' : 'index.php';
         .input-option input[type="radio"],
         .input-option input[type="checkbox"] {
             width: auto;
-            margin: 0 10px 0 0;
-            transform: scale(1.2);
-        }
-        .option-label {
-            font-weight: normal;
-            cursor: pointer;
-            user-select: none;
-            margin-bottom: 0;
+            margin-right: 10px;
         }
         button {
             background-color: #4CAF50;
@@ -154,7 +136,7 @@ $form_action = $is_edit_mode ? 'edit.php' : 'index.php';
         <div class="user-panel">
             <p>Вы вошли как: <?= htmlspecialchars($login) ?></p>
             <div class="user-actions">
-                <a href="?edit=1">Редактировать профиль</a> | 
+                <a href="?edit=1">Редактировать профиль</a>
                 <a href="login.php?action=logout">Выйти</a>
             </div>
         </div>
@@ -221,17 +203,15 @@ $form_action = $is_edit_mode ? 'edit.php' : 'index.php';
 
         <div class="form-group">
             <label class="input-label">Пол*</label>
-            <div class="input-group">
-                <div class="input-option">
-                    <input type="radio" id="gender_male" name="gender" value="male"
-                        <?= ($values['gender'] ?? '') === 'male' ? 'checked' : '' ?> required>
-                    <label for="gender_male" class="option-label">Мужской</label>
-                </div>
-                <div class="input-option">
-                    <input type="radio" id="gender_female" name="gender" value="female"
-                        <?= ($values['gender'] ?? '') === 'female' ? 'checked' : '' ?>>
-                    <label for="gender_female" class="option-label">Женский</label>
-                </div>
+            <div class="input-option">
+                <input type="radio" id="gender_male" name="gender" value="male"
+                    <?= ($values['gender'] ?? '') === 'male' ? 'checked' : '' ?> required>
+                <label for="gender_male" class="option-label">Мужской</label>
+            </div>
+            <div class="input-option">
+                <input type="radio" id="gender_female" name="gender" value="female"
+                    <?= ($values['gender'] ?? '') === 'female' ? 'checked' : '' ?>>
+                <label for="gender_female" class="option-label">Женский</label>
             </div>
             <?php if (!empty($errors['gender'])): ?>
                 <div class="error-message"><?= htmlspecialchars($errors['gender']) ?></div>
@@ -242,16 +222,12 @@ $form_action = $is_edit_mode ? 'edit.php' : 'index.php';
             <label for="languages" class="input-label">Языки программирования*</label>
             <select id="languages" name="languages[]" multiple 
                     class="<?= !empty($errors['languages']) ? 'error' : '' ?>" required>
-                <?php if (empty($languages)): ?>
-                    <option disabled>Нет доступных языков</option>
-                <?php else: ?>
-                    <?php foreach ($languages as $lang): ?>
-                        <option value="<?= htmlspecialchars($lang['id']) ?>"
-                            <?= in_array($lang['id'], $values['languages'] ?? []) ? 'selected' : '' ?>>
-                            <?= htmlspecialchars($lang['name']) ?>
-                        </option>
-                    <?php endforeach; ?>
-                <?php endif; ?>
+                <?php foreach ($languages as $lang): ?>
+                    <option value="<?= htmlspecialchars($lang['id']) ?>"
+                        <?= in_array($lang['id'], $values['languages'] ?? []) ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($lang['name']) ?>
+                    </option>
+                <?php endforeach; ?>
             </select>
             <?php if (!empty($errors['languages'])): ?>
                 <div class="error-message"><?= htmlspecialchars($errors['languages']) ?></div>
@@ -264,12 +240,10 @@ $form_action = $is_edit_mode ? 'edit.php' : 'index.php';
         </div>
 
         <div class="form-group">
-            <div class="input-group">
-                <div class="input-option">
-                    <input type="checkbox" id="contract_agreed" name="contract_agreed"
-                        <?= ($values['contract_agreed'] ?? false) ? 'checked' : '' ?> required>
-                    <label for="contract_agreed" class="option-label">С контрактом ознакомлен*</label>
-                </div>
+            <div class="input-option">
+                <input type="checkbox" id="contract_agreed" name="contract_agreed"
+                    <?= ($values['contract_agreed'] ?? false) ? 'checked' : '' ?> required>
+                <label for="contract_agreed" class="option-label">С контрактом ознакомлен*</label>
             </div>
             <?php if (!empty($errors['contract_agreed'])): ?>
                 <div class="error-message"><?= htmlspecialchars($errors['contract_agreed']) ?></div>
