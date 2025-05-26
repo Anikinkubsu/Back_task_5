@@ -2,7 +2,10 @@
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-
+if (isset($_SESSION['message'])) {
+    echo '<div class="message">'.htmlspecialchars($_SESSION['message']).'</div>';
+    unset($_SESSION['message']);
+}
 ob_start();
 header('Content-Type: text/html; charset=UTF-8');
 
