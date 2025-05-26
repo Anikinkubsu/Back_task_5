@@ -124,7 +124,7 @@ $form_action = $is_edit_mode ? 'edit.php' : 'index.php';
         </div>
     <?php endif; ?>
 
-    <form method="POST" action="index.php">
+    <form method="POST" action="<?= htmlspecialchars($form_action) ?>">
         <div class="form-group">
             <label for="full_name">ФИО*</label>
             <input type="text" id="full_name" name="full_name" 
