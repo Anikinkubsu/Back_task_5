@@ -111,12 +111,18 @@ $form_action = $is_edit_mode ? 'edit.php' : 'index.php';
 </head>
 <body>
     <?php if (!empty($login)): ?>
-        <p>Вы вошли как: <?= htmlspecialchars($login) ?> 
-        (<a href="login.php?action=logout">Выйти</a> | 
-        <a href="?edit=1">Редактировать профиль</a>)</p>
-    <?php else: ?>
-        <p><a href="login.php">Войти</a></p>
-    <?php endif; ?>
+    <div class="user-panel">
+        <p>Вы вошли как: <?= htmlspecialchars($login) ?></p>
+        <div class="user-actions">
+            <a href="?edit=1">Редактировать профиль</a> | 
+            <a href="login.php?action=logout">Выйти</a>
+        </div>
+    </div>
+<?php else: ?>
+    <div class="login-link">
+        <a href="login.php">Войти</a>
+    </div>
+<?php endif; ?>
     <?php if (!empty($login)): ?>
         <p>Вы вошли как: <?= htmlspecialchars($login) ?> (<a href="login.php?action=logout">Выйти</a>)</p>
     <?php else: ?>
