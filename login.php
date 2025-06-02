@@ -61,43 +61,42 @@ header('Content-Type: text/html; charset=UTF-8');
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Вход в систему</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 400px;
-            margin: 0 auto;
-            padding: 20px;
+
+        button:hover {
+          background-color: #8EE4AF;
+          transform: translateY(-2px);
+          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
         }
-        .login-form {
-            background: #f9f9f9;
-            padding: 20px;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+
+        button:active {
+          transform: translateY(0);
         }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-        }
-        input {
-            width: 100%;
-            padding: 8px;
-            box-sizing: border-box;
-        }
-        button {
-            background: #4CAF50;
-            color: white;
-            border: none;
-            padding: 10px;
-            width: 100%;
-            cursor: pointer;
-        }
+
         .error {
-            color: red;
-            margin-bottom: 15px;
+          color: #ff6b6b;
+          background-color: #fff;
+          padding: 10px;
+          border-radius: 5px;
+          margin-bottom: 15px;
+          text-align: center;
+          font-weight: bold;
         }
-    </style>
+
+        footer {
+          background-color: #379683;
+          color: #EDF5E1;
+          text-align: center;
+          padding: 20px 0;
+          width: 100%;
+          margin-top: auto;
+          box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        footer p {
+          margin: 0;
+          font-size: 14px;
+        }
+      </style>
 </head>
 <body>
     <div class="login-form">
